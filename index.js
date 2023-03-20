@@ -13,7 +13,7 @@ function getRandomInt(max) {
 }
 
 // Seed the random number generator
-Math.seed = 0;
+Math.seed = 1;
 Math.random = function() {
   const x = Math.sin(Math.seed++) * 10000;
   return x - Math.floor(x);
@@ -54,7 +54,7 @@ function calcValue(text) {
   for (let i = 0; i < 1000; i++) {
     const sampleText = sample(text, i);
 
-    value += getHashValue(sampleText + i.toString()) * table[i] * weight(i);
+    value += getHashValue(sampleText + i.toString() + salt) * table[i] * weight(i);
   }
 
   return value;
