@@ -5,103 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Text Score Calculator</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      background-color: #f0f0f0;
-      color: #333;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-
-    h2 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    form {
-      background-color: #fff;
-      padding: 1.5rem;
-      border-radius: 5px;
-      display: inline-block;
-      margin-bottom: 1.5rem;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-
-    input[type="text"] {
-      font-family: sans-serif;
-      font-size: 1rem;
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    button {
-      font-family: sans-serif;
-      font-size: 1rem;
-      background-color: #007bff;
-      color: #fff;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    #ranking {
-      background-color: #fff;
-      padding: 1.5rem;
-      border-radius: 5px;
-      display: inline-block;
-      width: 100%;
-      max-width: 400px;
-      text-align: left; /* Add this line to left-justify content */
-    }
-
-    .rank-entry {
-      margin-bottom: 0.5rem;
-      line-height: 2; /* Add this line for line spacing */
-    }
-  </style>
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
 </head>
 <body>
   <h1>Text Score Calculator</h1>
   <form id="text-form">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required>
-    <br>
-    <label for="input-text">Text:</label>
-    <input type="text" id="input-text" name="inputText" required>
-    <br>
-    <button type="submit">Submit</button>
-  </form>
-  <h2>Top Scores</h2>
-  <div id="ranking"></div>
-
+      <div class="form-input">
+        <input type="text" id="name" name="name" placeholder="Name" required>
+      </div>
+      <div class="form-input">
+        <input type="text" id="input-text" name="inputText" placeholder="Text" required>
+      </div>
+      <div class="form-input">
+        <input type="text" id="prefix" name="prefix" placeholder="Prefix (optional)">
+      </div>
+      <div class="form-input">
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+    <h2>Top Scores</h2>
+    <div class="ranking-history">
+      <table id="ranking-table">
+      </table>
+    </div>    
+    <h2>History</h2>
+    <div class="ranking-history">
+      <table id="history-table">
+      </table>
+    </div>
   <script>
     document.getElementById('text-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       const name = document.getElementById('name').value;
+      const prefix = document.getElementById('prefix').value;
       const inputText = document.getElementById('input-text').value;
 
-      const response = await axios.post('/test', { name, inputText });
+      const response = await axios.post('/scoring', { name, input: prefix + inputText });
       alert(`Score: ${response.data.score}`);
 
       document.getElementById('input-text').value = '';
@@ -110,15 +49,71 @@
     });
 
     async function updateRanking() {
-      const response = await axios.get('/ranking');
-      const rankingDiv = document.getElementById('ranking');
-      rankingDiv.innerHTML = '';
+      const response = await axios.get('/getData');
+      const rankingTable = document.getElementById('ranking-table');
+      rankingTable.innerHTML = '';
+      const historyTable = document.getElementById('history-table');
+      historyTable.innerHTML = '';
 
-      response.data.forEach((entry, index) => {
-        const rank = document.createElement('div');
-        rank.textContent = `${index + 1}. ${entry.name}: ${entry.score} (${entry.inputText})`;
-        rankingDiv.appendChild(rank);
+      const rankingHeadings = ['Rank', 'Name', 'Input', 'Score'];
+      const rankingTableHead = document.createElement('thead');
+      const rankingTableHeadRow = document.createElement('tr');
+      rankingHeadings.forEach((heading) => {
+        const th = document.createElement('th');
+        th.textContent = heading;
+        rankingTableHeadRow.appendChild(th);
       });
+      rankingTableHead.appendChild(rankingTableHeadRow);
+      rankingTable.appendChild(rankingTableHead);
+
+      const rankingBody = document.createElement('tbody');
+      response.data.ranking.forEach((entry, index) => {
+        const row = document.createElement('tr');
+        const rank = document.createElement('td');
+        rank.textContent = index + 1;
+        const name = document.createElement('td');
+        name.textContent = entry.name;
+        const input = document.createElement('td');
+        input.textContent = entry.input;
+        const score = document.createElement('td');
+        score.textContent = entry.score;
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(input);
+        row.appendChild(score);
+        rankingBody.appendChild(row);
+      });
+      rankingTable.appendChild(rankingBody);
+
+      const historyHeadings = ['Rank', 'Name', 'Input', 'Score'];
+      const historyTableHead = document.createElement('thead');
+      const historyTableHeadRow = document.createElement('tr');
+      historyHeadings.forEach((heading) => {
+        const th = document.createElement('th');
+        th.textContent = heading;
+        historyTableHeadRow.appendChild(th);
+      });
+      historyTableHead.appendChild(historyTableHeadRow);
+      historyTable.appendChild(historyTableHead);
+
+      const historyBody = document.createElement('tbody');
+      response.data.history.forEach((entry) => {
+        const row = document.createElement('tr');
+        const rank = document.createElement('td');
+        rank.textContent = '-';
+        const name = document.createElement('td');
+        name.textContent = entry.name;
+        const input = document.createElement('td');
+        input.textContent = entry.input;
+        const score = document.createElement('td');
+        score.textContent = entry.score;
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(input);
+        row.appendChild(score);
+        historyBody.appendChild(row);
+      });
+      historyTable.appendChild(historyBody);
     }
 
     updateRanking();
